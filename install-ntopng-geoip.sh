@@ -5,17 +5,11 @@
 # Silent updater script: /usr/local/bin/ntopng-updategeo.sh
 # You can get free key for https://ipinfo.io/ and https://www.maxmind.com/
 # Ipinfo has more and acurate records, but Ntopng does not support it
-# Usage with fetch:
-# fetch -o - https://raw.githubusercontent.com/YOURUSERNAME/YOURREPO/main/install-ntopng-geoip.sh \
-#    | sh -s -- YOUR_MAXMIND_LICENSE_KEY_HERE your_ipinfo_token_here
-# Usage with curl:
-# curl -fsSL https://raw.githubusercontent.com/YOURUSERNAME/YOURREPO/main/install-ntopng-geoip.sh \
-#    | sh -s -- YOUR_MAXMIND_LICENSE_KEY_HERE your_ipinfo_token_here
 # ========================================================================
 if [ $# -ne 2 ]; then
     echo "Usage: $0 MAXMIND_LICENSE_KEY IPINFO_TOKEN"
     echo "Example:"
-    echo "  fetch -o - https://raw.githubusercontent.com/YOURUSER/YOURREPO/main/install-ntopng-geoip.sh | sh -s -- YOUR_MAXMIND_KEY your_ipinfo_token"
+    echo "  fetch -o - https://raw.githubusercontent.com/ghostersk/ntopng-geoip/refs/heads/main/install-ntopng-geoip.sh | sh -s -- YOUR_MAXMIND_KEY your_ipinfo_token"
     exit 1
 fi
 
@@ -53,9 +47,12 @@ if [ -z "${LICENSE_KEY}" ] || [ -z "${IPINFO_TOKEN}" ]; then
 fi
 
 # MaxMind City
-fetch -q -o - "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=${LICENSE_KEY}&suffix=tar.gz" \
-    | tar xz --strip-components=1 --wildcards "*.mmdb" 2>/dev/null || true
-mv GeoLite2-City_*/GeoLite2-City.mmdb . 2>/dev/null || true
+fetch -o /tmp/GeoLite2-City.tar.gz \
+    "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=${LICENSE_KEY}&suffix=tar.gz"
+tar xzf /tmp/GeoLite2-City.tar.gz -C /tmp
+mv /tmp/GeoLite2-City_*/GeoLite2-City.mmdb "${GEOIP_DIR}/" 2>/dev/null || true
+rm -f /tmp/GeoLite2-City.tar.gz
+rm -rf /tmp/GeoLite2-City_* 2>/dev/null || true
 
 # ipinfo.io ASN (saved as Geolite2-ASN.mmdb instead of maxmind)
 fetch -q -o GeoLite2-ASN.mmdb "https://ipinfo.io/data/free/asn.mmdb?token=${IPINFO_TOKEN}"
