@@ -5,6 +5,8 @@
 # Silent updater script: /usr/local/bin/ntopng-updategeo.sh
 # You can get free key for https://ipinfo.io/ and https://www.maxmind.com/
 # Ipinfo has more and acurate records, but Ntopng does not support it
+# Run cron every Sunday 1AM: 0 1 * * 7
+# Run cron every month 1st at 3:30am: 30 3 1 * *
 # ========================================================================
 if [ $# -ne 2 ]; then
     echo "Usage: $0 MAXMIND_LICENSE_KEY IPINFO_TOKEN"
@@ -24,7 +26,20 @@ LicenseKey ${MAXMIND_KEY}
 IPINFO_TOKEN ${IPINFO_TOKEN}
 EOF
 
-# 2. Create the silent updater script
+# 2. Create Crontab action for web ui
+cat << EOF > /usr/local/opnsense/service/conf/actions.d/actions_ntopnggeo.conf
+[update_geo]
+command:/usr/local/bin/ntopng-updategeo.sh
+parameters:
+type:script
+message:Updating ntopng GeoIP databases
+description:ntopng GeoIP Update
+EOF
+
+# 3. Restarts Config service
+service configd restart
+
+# 4. Create the silent updater script
 cat << 'UPDATER' > /usr/local/bin/ntopng-updategeo.sh
 #!/bin/sh
 # Silent ntopng GeoIP updater - MaxMind City/Country + ipinfo ASN
@@ -65,10 +80,10 @@ chmod 444 *.mmdb
 /usr/local/etc/rc.d/ntopng restart >/dev/null 2>&1 || true
 UPDATER
 
-# 3. Make executable
+# 5. Make executable
 chmod 755 /usr/local/bin/ntopng-updategeo.sh
 
-# 4. Run once (silent on success)
+# 6. Run once (silent on success)
 echo "→ Running initial update (this may take a few seconds)..."
 /usr/local/bin/ntopng-updategeo.sh
 
