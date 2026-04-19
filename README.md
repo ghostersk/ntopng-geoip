@@ -1,4 +1,4 @@
-# ntopng-geoip
+# Geo Location for Opnsense NtopNG
 Script to add Geo data to NtopNG - Opnsense
 
 - You will need to get license key for https://ipinfo.io/ and https://www.maxmind.com/
